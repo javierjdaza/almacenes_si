@@ -11,7 +11,7 @@ import plotly.express as px
 import numpy as np
 
 
-st.set_page_config(page_title='Football Stats', page_icon = '📊', layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title='Almacenes Si', page_icon = '📊', layout="wide", initial_sidebar_state="collapsed")
 
 
 st.markdown("<h1 style='text-align: center;'>Almacenes SI</h1>", unsafe_allow_html=True)
