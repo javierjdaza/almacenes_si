@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "almacenes-si"
+version = "0.1.0"
+description = ""
+authors = ["Javier Javier <javierjdaza@gmail.com>"]
+readme = "README.md"
+packages = [{include = "almacenes_si"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.0"
+streamlit = "^1.31.1"
+streamlit-option-menu = "^0.3.12"
+plotly = "^5.19.0"
+openpyxl = "^3.1.2"
+nbformat = "^5.9.2"
+matplotlib = "^3.8.3"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
