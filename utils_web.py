@@ -68,7 +68,7 @@ class AlmacenesSiModel:
     def get_keys_names_and_model(self):
         
         models_info = {}
-        for model_path in stqdm(glob(f'{self.serialized_models_path}/*.json')):
+        for model_path in stqdm(glob(f'{self.serialized_models_path}/*.json')[:30]):
             
             key_name = str(os.path.basename(model_path).split('.')[0].strip())
             model_temp = self.load_model_from_json(model_path)
@@ -105,10 +105,13 @@ class AlmacenesSiModel:
         forecast_df = self.forecast_df
         prior_year_sales_df = self.prior_year_sales_df
         forecast_df['fecha'] = pd.to_datetime(forecast_df['fecha'])
-        forecast_df['semana'] = pd.to_datetime(forecast_df['fecha']).apply(lambda x: x.strftime('%-W'))
+        forecast_df['semana'] = pd.to_datetime(forecast_df['fecha']).apply(lambda x: x.strftime('%W'))
+        forecast_df['semana'] = pd.to_datetime(forecast_df['semana']).apply(lambda x: x.lstrip('0'))
 
         prior_year_sales_df['date'] = pd.to_datetime(prior_year_sales_df['date'])
-        prior_year_sales_df['week'] = prior_year_sales_df['date'].apply(lambda x: x.strftime('%-W'))
+        prior_year_sales_df['week'] = prior_year_sales_df['date'].apply(lambda x: x.strftime('%W'))
+        prior_year_sales_df['week'] = prior_year_sales_df['week'].apply(lambda x: x.lstrip('0'))
+        
         
         self.demanda_desagrada_por_tienda = pd.DataFrame()
         year_prediction = int(prior_year_sales_df['date'].max().strftime('%Y'))
