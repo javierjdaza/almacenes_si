@@ -2,6 +2,12 @@ from prophet import Prophet
 from prophet.serialize import model_to_json, model_from_json
 import logging
 logging.getLogger("prophet").setLevel(logging.WARNING)
+import warnings
+warnings.filterwarnings('ignore')
+import logging
+
+# Set the logging level for cmdstanpy to WARNING
+logging.getLogger('cmdstanpy').setLevel(logging.WARNING)
 import pandas as pd
 import numpy as np
 import json
@@ -25,7 +31,7 @@ class AlmacenesSiModel:
         logging.info('Archivo de campañas cargado exitosamente ✅')
         self.prior_year_sales_df = pd.read_csv(prior_year_sales_file_path)
         logging.info(f'Archivo historico de ventas del año {self.year_to_forecast - 1} cargado exitosamente ✅')
-        self.future_regressors['ds'] = pd.to_datetime(self.future_regressors['ds'])
+        self.future_regressors['date_week'] = pd.to_datetime(self.future_regressors['date_week'])
         logging.info('Cargando datos del Modelo Predictivo ⌛')
         self.models_info = self.get_keys_names_and_model()
         logging.info('Modelo Predictivo cargado exitosamente ✅')
@@ -40,7 +46,7 @@ class AlmacenesSiModel:
         return prophet_model    
     
     @staticmethod
-    def make_predictions(model, future_regressors : pd.DataFrame, year : int)->pd.DataFrame:
+    def make_predictions(model, key_combination: str, future_regressors : pd.DataFrame, year : int)->pd.DataFrame:
         # Obtener la última fecha histórica
         last_date = max(model.history_dates) + timedelta(weeks=1)
         
@@ -51,8 +57,13 @@ class AlmacenesSiModel:
         future = pd.DataFrame({'ds': future_dates})
         future = future[future['ds'] >= f'{year}-01-01']
         
+        # prepara los regresores dada la familia
+        familia = str(key_combination[:3])
+        df_discount_and_campaings = future_regressors[future_regressors['familia'] == familia]
+        df_discount_and_campaings.rename(columns = {'date_week':'ds'}, inplace = True)
+        
         # Añadir los regresores al DataFrame futuro
-        future = future.merge(future_regressors, how='left', on='ds')
+        future = future.merge(df_discount_and_campaings, how='left', on='ds')
         
         # Llenar NaNs con 0 si es necesario 
         future.fillna(0, inplace=True)
@@ -60,6 +71,7 @@ class AlmacenesSiModel:
         # Hacer la predicción
         forecast = model.predict(future)
         forecast['yhat'] = forecast['yhat'].apply(lambda x: 0 if x < 1 else x )
+        forecast['yhat'] = forecast['yhat'].apply(lambda x: np.ceil(x) )
         return forecast[['ds', 'yhat']]
     
     def get_keys_names_and_model(self):
@@ -81,6 +93,7 @@ class AlmacenesSiModel:
         for key, model in tqdm(self.models_info.items()):
             
             PARAMS = {
+                'key_combination' : key,
                 'model' : model,
                 'future_regressors' : self.future_regressors,
                 'year' : self.year_to_forecast
@@ -173,4 +186,5 @@ if __name__ == '__main__':
     # ======================================================
     store_breakdown_output_path = f'./demanda_por_tienda/Almacenes_si_prediccion_demanda_desagregado_por_tienda_{PARAMS["year_to_forecast"]}.csv'
     demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
+    demanda_desagrada_por_tienda.to_csv(store_breakdown_output_path, index=False)
     logging.info(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
