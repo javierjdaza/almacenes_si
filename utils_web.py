@@ -68,7 +68,7 @@ class AlmacenesSiModel:
     def get_keys_names_and_model(self):
         
         models_info = {}
-        for model_path in stqdm(glob(f'{self.serialized_models_path}/*.json')[:30]):
+        for model_path in stqdm(glob(f'{self.serialized_models_path}/*.json')):
             
             key_name = str(os.path.basename(model_path).split('.')[0].strip())
             model_temp = self.load_model_from_json(model_path)
