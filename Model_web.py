@@ -102,7 +102,7 @@ with b2:
         store_breakdown_output_path = f'./demanda_por_tienda/Almacenes_si_prediccion_demanda_desagregado_por_tienda_{PARAMS["year_to_forecast"]}.csv'
         try:
             demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
-            if isinstance(demanda_desagrada_por_tienda, str) != str:
+            if not isinstance(demanda_desagrada_por_tienda, str):
                 st.success(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
                 st.markdown("<h4 style='text-align: center;'>Prediccion Desagregada por Tienda</h4>", unsafe_allow_html=True)
                 demanda_desagrada_por_tienda['store_id']  = demanda_desagrada_por_tienda['store_id'].astype(str)
