@@ -62,8 +62,13 @@ b1,b2,b3 = st.columns((1,3,1))
 with b2:
     st.markdown("<h4 style='text-align: center;'>Archivo de Campañas y descuentos</h4>", unsafe_allow_html=True)
     st.write('')
-    campanias_df = pd.read_csv('./archivos_insumo/archivo_insumo_dummy_campañas_2024.csv')
-    st.dataframe(campanias_df, use_container_width = True)
+    file_path = './config.yaml'  
+    with open(file_path, 'r') as file: config = yaml.safe_load(file)
+    if not os.path.exists(config['campaigns_filepath']):
+        st.error("El archivo de campañas especificado no existe")
+    else:
+        campanias_df = pd.read_csv(config['campaigns_filepath'])
+        st.dataframe(campanias_df, use_container_width = True)
 
     
     t1,t2,t3 = st.columns((1,3,1))
@@ -97,14 +102,16 @@ with b2:
         store_breakdown_output_path = f'./demanda_por_tienda/Almacenes_si_prediccion_demanda_desagregado_por_tienda_{PARAMS["year_to_forecast"]}.csv'
         try:
             demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
-            if type(demanda_desagrada_por_tienda) != str:
+            if isinstance(demanda_desagrada_por_tienda, str) != str:
                 st.success(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
                 st.markdown("<h4 style='text-align: center;'>Prediccion Desagregada por Tienda</h4>", unsafe_allow_html=True)
+                demanda_desagrada_por_tienda['store_id']  = demanda_desagrada_por_tienda['store_id'].astype(str)
                 st.dataframe(demanda_desagrada_por_tienda, use_container_width=True)
             else:
                 st.error(demanda_desagrada_por_tienda)
-        except:
+        except Exception as e:
             st.error('Se debe correr la prediccion, para sacar el calculo desagregado')
+            st.error(e)
 
 # if menu_bar_selected == 'Calculo Prediccion desagregada':
     # st.markdown("<h1 style='text-align: center;'>Calculo Prediccion desagregada</h1>", unsafe_allow_html=True)

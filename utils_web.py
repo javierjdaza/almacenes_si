@@ -1,17 +1,14 @@
-from prophet import Prophet
-from prophet.serialize import model_to_json, model_from_json
+from prophet.serialize import model_from_json
 import logging
-logging.getLogger("prophet").setLevel(logging.WARNING)
 import pandas as pd
 import numpy as np
-import json
 from datetime import timedelta
 from glob import glob
 from stqdm import stqdm
 import os
-import yaml
 import warnings
 import streamlit as st
+logging.getLogger("prophet").setLevel(logging.WARNING)
 warnings.filterwarnings('ignore')
 
 class AlmacenesSiModel:
@@ -25,7 +22,7 @@ class AlmacenesSiModel:
         st.success('Archivo de campañas cargado exitosamente ✅')
         self.prior_year_sales_df = pd.read_csv(prior_year_sales_file_path)
         st.success(f'Archivo historico de ventas del año {self.year_to_forecast - 1} cargado exitosamente ✅')
-        self.future_regressors['ds'] = pd.to_datetime(self.future_regressors['ds'])
+        self.future_regressors['date_week'] = pd.to_datetime(self.future_regressors['date_week'])
         st.success('Cargando datos del Modelo Predictivo ⌛')
         self.models_info = self.get_keys_names_and_model()
         st.success('Modelo Predictivo cargado exitosamente ✅')
@@ -40,18 +37,24 @@ class AlmacenesSiModel:
         return prophet_model    
     
     @staticmethod
-    def make_predictions(model, future_regressors : pd.DataFrame, year : int)->pd.DataFrame:
+    def make_predictions(model, key_combination: str, future_regressors : pd.DataFrame, year : int)->pd.DataFrame:
         # Obtener la última fecha histórica
         last_date = max(model.history_dates) + timedelta(weeks=1)
         
         # Crear un DataFrame con las fechas futuras hasta el año especificado, por semana comenzando en lunes
         future_dates = pd.date_range(start=last_date, end=f'{year}-12-31', freq='W-MON')
-        
+
         # Crear el DataFrame con las fechas y los regresores
         future = pd.DataFrame({'ds': future_dates})
         future = future[future['ds'] >= f'{year}-01-01']
+        
+        # prepara los regresores dada la familia
+        familia = str(key_combination[:3])
+        df_discount_and_campaings = future_regressors[future_regressors['familia'] == familia]
+        df_discount_and_campaings.rename(columns = {'date_week':'ds'}, inplace = True)
+        
         # Añadir los regresores al DataFrame futuro
-        future = future.merge(future_regressors, how='left', on='ds')
+        future = future.merge(df_discount_and_campaings, how='left', on='ds')
         
         # Llenar NaNs con 0 si es necesario 
         future.fillna(0, inplace=True)
@@ -59,12 +62,13 @@ class AlmacenesSiModel:
         # Hacer la predicción
         forecast = model.predict(future)
         forecast['yhat'] = forecast['yhat'].apply(lambda x: 0 if x < 1 else x )
+        forecast['yhat'] = forecast['yhat'].apply(lambda x: np.ceil(x) )
         return forecast[['ds', 'yhat']]
     
     def get_keys_names_and_model(self):
         
         models_info = {}
-        for model_path in stqdm(glob(f'{self.serialized_models_path}/*.json')):
+        for model_path in stqdm(glob(f'{self.serialized_models_path}/*.json')[:30]):
             
             key_name = str(os.path.basename(model_path).split('.')[0].strip())
             model_temp = self.load_model_from_json(model_path)
@@ -80,6 +84,7 @@ class AlmacenesSiModel:
         for key, model in stqdm(self.models_info.items()):
             
             PARAMS = {
+                'key_combination' : key,
                 'model' : model,
                 'future_regressors' : self.future_regressors,
                 'year' : self.year_to_forecast
