@@ -100,18 +100,18 @@ with b2:
         # --- Prediccion de demanda desagregado por tienda ---
         # ======================================================
         store_breakdown_output_path = f'./demanda_por_tienda/Almacenes_si_prediccion_demanda_desagregado_por_tienda_{PARAMS["year_to_forecast"]}.csv'
-        # try:
-        demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
-        if not isinstance(demanda_desagrada_por_tienda, str):
-            st.success(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
-            st.markdown("<h4 style='text-align: center;'>Prediccion Desagregada por Tienda</h4>", unsafe_allow_html=True)
-            demanda_desagrada_por_tienda['store_id']  = demanda_desagrada_por_tienda['store_id'].astype(str)
-            st.dataframe(demanda_desagrada_por_tienda, use_container_width=True)
-        else:
-            st.error(demanda_desagrada_por_tienda)
-        # except Exception as e:
-        #     st.error('Se debe correr la prediccion, para sacar el calculo desagregado')
-        #     st.error(e)
+        try:
+            demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
+            if not isinstance(demanda_desagrada_por_tienda, str):
+                st.success(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
+                st.markdown("<h4 style='text-align: center;'>Prediccion Desagregada por Tienda</h4>", unsafe_allow_html=True)
+                demanda_desagrada_por_tienda['store_id']  = demanda_desagrada_por_tienda['store_id'].astype(str)
+                st.dataframe(demanda_desagrada_por_tienda, use_container_width=True)
+            else:
+                st.error(demanda_desagrada_por_tienda)
+        except Exception as e:
+            st.error('Se debe correr la prediccion, para sacar el calculo desagregado')
+            st.error(e)
 
 # if menu_bar_selected == 'Calculo Prediccion desagregada':
     # st.markdown("<h1 style='text-align: center;'>Calculo Prediccion desagregada</h1>", unsafe_allow_html=True)
