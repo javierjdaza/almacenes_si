@@ -41,16 +41,14 @@ def load_params(year_predict):
     if os.path.exists(config['campaigns_filepath']) != True:
         st.error("El archivo de campañas especificado no existe")
 
-    if os.path.exists(config['prior_year_sales_file_path']) != True:
-        st.error("El archivo historico de ventas especificado no existe")
-
     if os.path.isdir(config['serialized_models_path']) != True:
         st.error("La carpeta contenedora de los modelos especificada no existe")
 
     PARAMS = {
         'serialized_models_path' : config['serialized_models_path'],
         'campaigns_filepath' : config['campaigns_filepath'],
-        'prior_year_sales_file_path' : config['prior_year_sales_file_path'],
+        'training_dataset_path' : config['training_dataset_path'],
+        'price_increment_path' : config['price_increment_path'],
         'year_to_forecast' : int(year_predict),
     }
     return PARAMS
@@ -60,7 +58,7 @@ st.write('---')
 
 b1,b2,b3 = st.columns((1,3,1))
 with b2:
-    st.markdown("<h4 style='text-align: center;'>Archivo de Campañas y descuentos</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center;'>Archivo de Descuentos</h4>", unsafe_allow_html=True)
     st.write('')
     file_path = './config.yaml'  
     with open(file_path, 'r') as file: config = yaml.safe_load(file)
@@ -69,16 +67,22 @@ with b2:
     else:
         campanias_df = pd.read_csv(config['campaigns_filepath'])
         st.dataframe(campanias_df, use_container_width = True)
+    st.markdown("<h4 style='text-align: center;'>Archivo de Incremento Precios</h4>", unsafe_allow_html=True)
+    st.write('')
+    if not os.path.exists(config['price_increment_path']):
+        st.error("El archivo de incremento de precios no existe")
+    else:
+        price_increment_df = pd.read_csv(config['price_increment_path'])
+        st.dataframe(price_increment_df, use_container_width = True)
 
     
-    t1,t2,t3 = st.columns((1,3,1))
-    with t2:
-        st.markdown("<h4 style='text-align: center;'>Seleccionar año a predecir</h4>", unsafe_allow_html=True)
-        anio_prediccion = st.slider(label= "Año de prediccion", min_value=2024, max_value=2030)
-        boton_prediccion = st.button('Realizar Prediccion')
+    t1,t2,t3,t4,t5 = st.columns(5)
+    with t3:
+        st.markdown("<h4 style='text-align: center;'>Prediccion 2024</h4>", unsafe_allow_html=True)
+        boton_prediccion = st.button('Realizar Prediccion',use_container_width = True)
     
     if boton_prediccion:    
-        PARAMS = load_params(anio_prediccion)
+        PARAMS = load_params(2024)
 
         almacenes_si = AlmacenesSiModel(**PARAMS)
 
@@ -100,19 +104,15 @@ with b2:
         # --- Prediccion de demanda desagregado por tienda ---
         # ======================================================
         store_breakdown_output_path = f'./demanda_por_tienda/Almacenes_si_prediccion_demanda_desagregado_por_tienda_{PARAMS["year_to_forecast"]}.csv'
-        try:
-            demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
-            if not isinstance(demanda_desagrada_por_tienda, str):
-                st.success(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
-                st.markdown("<h4 style='text-align: center;'>Prediccion Desagregada por Tienda</h4>", unsafe_allow_html=True)
-                demanda_desagrada_por_tienda['store_id']  = demanda_desagrada_por_tienda['store_id'].astype(str)
-                st.dataframe(demanda_desagrada_por_tienda, use_container_width=True)
-            else:
-                st.error(demanda_desagrada_por_tienda)
-        except Exception as e:
-            st.error('Se debe correr la prediccion, para sacar el calculo desagregado')
-            st.error(e)
 
+        demanda_desagrada_por_tienda = almacenes_si.calculate_store_breakdown()
+        if not isinstance(demanda_desagrada_por_tienda, str):
+            st.success(f'Los calculos desagregados por tienda estan listos y han sido guardados en {store_breakdown_output_path}✅')
+            st.markdown("<h4 style='text-align: center;'>Prediccion Desagregada por Tienda</h4>", unsafe_allow_html=True)
+            demanda_desagrada_por_tienda['store_id']  = demanda_desagrada_por_tienda['store_id'].astype(str)
+            st.dataframe(demanda_desagrada_por_tienda, use_container_width=True)
+        else:
+            st.error(demanda_desagrada_por_tienda)
 # if menu_bar_selected == 'Calculo Prediccion desagregada':
     # st.markdown("<h1 style='text-align: center;'>Calculo Prediccion desagregada</h1>", unsafe_allow_html=True)
     # st.write('---')

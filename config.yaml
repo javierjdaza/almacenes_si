@@ -1,4 +1,5 @@
 serialized_models_path: "./serialized_models" # carpeta donde estan todos los modelos (NO CAMBIAR)
-campaigns_filepath: "./archivos_insumo/archivo_insumo_2023.csv" # Directorio donde esta el archivo de insumo de campañas
-prior_year_sales_file_path: "./datasets/historico_ventas_2023_semanal.csv" # Historico de ventas del año ANTERIOR al que se hara la prediccion (si se desea obtener prediccion para el año 2024, se debera tener el historico de ventas del 2023 - desde enero hasta diciembre -)
+campaigns_filepath: "./archivos_insumo/archivo_insumo_dummy_campañas_2024.csv" # Directorio donde esta el archivo de insumo de campañas
+training_dataset_path: "./datasets/master_sales_by_week_curated.parquet" # Dataset con el que se entreno (de este archivo se extrae los precios del ultimo año)
+price_increment_path: "./archivos_insumo/incremento_precios_familia.csv" # Dataset con el incremento de precio por familia
 year_to_forecast: 2024 # año que se hara la prediccion
